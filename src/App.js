@@ -44,8 +44,20 @@ const App = () => {
   }
 
   function onSelect(friend) {
-    setSelectedFriend(friend);
+    setSelectedFriend((cur) => (cur?.id === friend.id ? null : friend));
     setShowAddFriend(false);
+  }
+
+  function handleSplitBill(value) {
+    console.log(value);
+
+    setFriends((friends) =>
+      friends.map((friend) =>
+        selectedFriend.id === friend.id
+          ? { ...friend, balance: friend.balance + value }
+          : friend
+      )
+    );
   }
 
   return (
@@ -64,7 +76,12 @@ const App = () => {
         </Button>
       </div>
 
-      {selectedFriend && <SplitBillForm selectedFriend={selectedFriend} />}
+      {selectedFriend && (
+        <SplitBillForm
+          selectedFriend={selectedFriend}
+          onSplitBill={handleSplitBill}
+        />
+      )}
     </div>
   );
 };
@@ -88,14 +105,14 @@ const Friend = ({ friends, onSelect, selectedFriend }) => {
 const FriendList = ({ friend, onSelect, selectedFriend }) => {
   const isSelected = selectedFriend?.id === friend.id;
   return (
-    <li>
+    <li className={isSelected ? "selected" : ""}>
       <img src={friend.image} alt={friend.name} />
       <h3>{friend.name}</h3>
       {friend.balance > 0 && (
         <p className="green">{`${friend.name} owes you $${friend.balance}`}</p>
       )}
       {friend.balance < 0 && (
-        <p className="red">{`${friend.name} owes you $${Math.abs(
+        <p className="red">{`You owe ${friend.name} $${Math.abs(
           friend.balance
         )}`}</p>
       )}
@@ -151,14 +168,22 @@ const AddFriendList = ({ onAddFriend }) => {
   );
 };
 
-const SplitBillForm = ({ selectedFriend }) => {
+const SplitBillForm = ({ selectedFriend, onSplitBill }) => {
   const [bill, setBill] = useState("");
   const [userExpense, setUserExpense] = useState("");
   const friendExpense = bill - userExpense;
   const [billChester, setBillChester] = useState("user");
 
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!bill || !userExpense) return;
+
+    onSplitBill(billChester === " user" ? friendExpense : -userExpense);
+  }
+
   return (
-    <form className="form-split-bill">
+    <form className="form-split-bill" onSubmit={handleSubmit}>
       <h2>Spilt the Bill with {selectedFriend.name}</h2>
 
       <label>💰 Bill value</label>
